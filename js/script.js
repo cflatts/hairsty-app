@@ -16,13 +16,12 @@ var query = function(elementInput) {
 
 //SNIPPIT COLLECTION
 
-var SnippitCollection = Backbone.Collection.extend({
+var MultiCollection = Backbone.Collection.extend({
     url: 'https://openapi.etsy.com/v2/listings/active.js?api_key=',
     _token: 's49cw4bk576jhmk3kyeljdf',
 
     parse: function(apiResponse) {
-        console.log(typeof apiResponse)
-        console.log('this is the data >>>',apiResponse)
+        return apiResponse.results //returns an object that has an array of objects on the results key
     }
 
 
@@ -30,8 +29,30 @@ var SnippitCollection = Backbone.Collection.extend({
 
 //SNIPPIT VIEW
 
-var SnippitView = Backbone.View.extend ({
-    el: query('#container'),
+var MultiView = Backbone.View.extend ({
+    el:'#container',
+
+
+    initialize: function(multiColl) { //the input is the same as when we created a new instance in the router
+        this.coll = multiColl //sets multiColl as property of the view
+        var thisView = this
+        var boundRender = this._render.bind(thisView) //
+        this.coll.on('sync',boundRender) //says that when the collection is synced to run the boundRender function
+    },
+
+    _render: function(){
+    var itemsArray = this.coll.models
+    // console.log(itemsArray)
+    var htmlString =''
+    for(var i = 0; i < itemsArray.length; i++) {
+        var array = itemsArray[i]
+        // console.log(array.get('category_id'))
+        htmlString += '<div class = "itemContainer">'
+        htmlString +=       '<div class = "title" data-id = "' + array.get('category_id') + '">' + array.get('title') + '</div>'
+        htmlString += '</div>'
+    }
+        this.el.innerHTML = htmlString
+    }
 
 })
 
@@ -39,28 +60,39 @@ var SnippitView = Backbone.View.extend ({
 
 var AppRouter = Backbone.Router.extend({
     routes: {
-
-        '*default': 'showSnippitView'
+        'home': 'showMultiView',
+        'search/:query': 'doSearch',
+        'details/:id': 'showSingleView',
+        '*default': 'showMultiView'
     },
 
+    showSingleView: function(id) {
 
-    showSnippitView: function() {
-        var snippitColl = new SnippitCollection()
-        // console.log(snippitColl)
-        snippitColl.fetch({
+    },
+
+    doSearch: function(query) {
+
+    },
+
+    showMultiView: function() {
+        var multiColl = new MultiCollection() //creates new instance of MultiCollection and models key filled with an array of modelsd
+        multiColl.fetch({
             dataType: 'jsonp',
             data: {
-                includes: 'Images,Shop',
+                includes: 'Images,Shop', //parameters set on data
                 api_key: 'ls49cw4bk576jhmk3kyeljdf'
             }
         })
+        var multiView = new MultiView(multiColl) //creates new instance of the view we want, taking the collection we want to render as input
+
     },
+
     initialize: function () {
-        Backbone.history.start()
+        Backbone.history.start() //starts keeping track of hash changes so that rendering new views is easier
     }
 })
 
-var myApp = new AppRouter
+var myApp = new AppRouter //creates new instance of the router
 
 //WORKFLOW
 //
