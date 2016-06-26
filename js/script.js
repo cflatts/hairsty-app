@@ -42,13 +42,14 @@ var MultiView = Backbone.View.extend ({
 
     _render: function(){
     var itemsArray = this.coll.models
-    // console.log(itemsArray)
+    console.log(itemsArray)
     var htmlString =''
     for(var i = 0; i < itemsArray.length; i++) {
         var array = itemsArray[i]
         // console.log(array.get('category_id'))
         htmlString += '<div class = "itemContainer">'
         htmlString +=       '<div class = "title" data-id = "' + array.get('category_id') + '">' + array.get('title') + '</div>'
+        htmlString +=       '<img src = "' + array.get('Images')[0].url_170x135 +'">'
         htmlString += '</div>'
     }
         this.el.innerHTML = htmlString
