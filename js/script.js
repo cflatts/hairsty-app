@@ -14,20 +14,36 @@ var query = function(elementInput) {
     return document.querySelector('elementInput')
 }
 
-//SNIPPIT COLLECTION
+//COLLECTION/MODEL
 
 var MultiCollection = Backbone.Collection.extend({
-    url: 'https://openapi.etsy.com/v2/listings/active.js?api_key=',
-    _token: 's49cw4bk576jhmk3kyeljdf',
+    url: 'https://openapi.etsy.com/v2/listings/active.js',
+    _token: 'ls49cw4bk576jhmk3kyeljdf',
 
     parse: function(apiResponse) {
         return apiResponse.results //returns an object that has an array of objects on the results key
     }
 
-
 })
 
-//SNIPPIT VIEW
+var SingleModel = Backbone.Model.extend({
+    url: function () {
+        return 'https://openapi.etsy.com/v2/listings/' + this.id + '.js'
+    },
+    _token: 'ls49cw4bk576jhmk3kyeljdf',
+
+    parse: function(apiResponse) {
+        // console.log(apiResponse)
+        return apiResponse
+    },
+
+    initialize: function(id) {
+        this.id = id
+    }
+})
+
+
+//VIEWS
 
 var MultiView = Backbone.View.extend ({
     el:'#container',
@@ -40,20 +56,54 @@ var MultiView = Backbone.View.extend ({
         this.coll.on('sync',boundRender) //says that when the collection is synced to run the boundRender function
     },
 
+    events: {
+        'click .itemContainer': '_goToSingle'
+    },
+
+    _goToSingle: function(evt) {
+    console.log(evt.currentTarget)
+    var itemId = evt.target.getAttribute('data-id')
+    window.location.hash = 'details/' + itemId
+    },
+
     _render: function(){
     var itemsArray = this.coll.models
     console.log(itemsArray)
     var htmlString =''
     for(var i = 0; i < itemsArray.length; i++) {
         var array = itemsArray[i]
-        // console.log(array.get('category_id'))
-        htmlString += '<div class = "itemContainer">'
-        htmlString +=       '<div class = "title" data-id = "' + array.get('category_id') + '">' + array.get('title') + '</div>'
-        htmlString +=       '<img src = "' + array.get('Images')[0].url_170x135 +'">'
+        // console.log(array.get('listing_id'))
+        htmlString += '<div class = "itemContainer" data-id = "' + array.get('listing_id') + '">'
+        htmlString +=       '<div class = "title">' + array.get('title') + '</div>'
+        htmlString +=       '<img src = "' + array.get('Images')[0].url_170x135 + '">'
+        htmlString +=       '<div class = "price">' + array.get('price') + '</div>'
         htmlString += '</div>'
     }
         this.el.innerHTML = htmlString
     }
+
+})
+
+var SingleView = Backbone.View.extend ({
+    el: '#container',
+
+    initialize: function(model){
+        this.model = model
+        var thisView = this
+        var boundRender = this._render.bind(thisView)
+        this.model.on('sync', boundRender)
+    },
+
+    _render: function() {
+        var item = this.model
+        console.log(item)
+        var htmlString = ''
+        htmlString += '<div class = "singleItemContainer">'
+        // htmlString +=       '<img src = "' + item.get('results[0].Images')[0].url_fullxfull + '">'
+        htmlString +=       '<div class = "description">' + item.get('results')[0].description + '</div>'
+        htmlString += '</div>'
+        this.el.innerHTML = htmlString
+    },
 
 })
 
@@ -64,15 +114,20 @@ var AppRouter = Backbone.Router.extend({
         'home': 'showMultiView',
         'search/:query': 'doSearch',
         'details/:id': 'showSingleView',
-        '*default': 'showMultiView'
+        '*default': 'backToHome'
     },
 
     showSingleView: function(id) {
+        var singleModel = new SingleModel(id)
 
-    },
-
-    doSearch: function(query) {
-
+        singleModel.fetch({
+            dataType: 'jsonp',
+            data: {
+                includes: 'Images, Shops',
+                api_key: 'ls49cw4bk576jhmk3kyeljdf'
+            }
+        })
+        var singleView = new SingleView(singleModel)
     },
 
     showMultiView: function() {
@@ -86,6 +141,10 @@ var AppRouter = Backbone.Router.extend({
         })
         var multiView = new MultiView(multiColl) //creates new instance of the view we want, taking the collection we want to render as input
 
+    },
+
+    backToHome: function() {
+        location.hash = 'home'
     },
 
     initialize: function () {
