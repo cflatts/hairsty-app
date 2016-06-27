@@ -1,9 +1,5 @@
 //DON'T FORGET YOUR FUCKING COMMAS, THEY WILL MURDER YOUR PROGRAM!!!!!!!!!!!
 //DONT FUCK UP THE SPELLING OF *INITIALIZE* IT WILL MURDER YOUR MIND (AND YOUR PROGRAM)!!!
-// console.log('hi')
-// console.log($)
-// console.log(_)
-// console.log(Backbone)
 
 var rootUrl = 'https://openapi.etsy.com/v2/listings/active.js?api_key='
 var token = 'ls49cw4bk576jhmk3kyeljdf'
@@ -33,7 +29,6 @@ var SingleModel = Backbone.Model.extend({
     _token: 'ls49cw4bk576jhmk3kyeljdf',
 
     parse: function(apiResponse) {
-        // console.log(apiResponse)
         return apiResponse
     },
 
@@ -51,6 +46,7 @@ var MultiView = Backbone.View.extend ({
 
     initialize: function(multiColl) { //the input is the same as when we created a new instance in the router
         this.coll = multiColl //sets multiColl as property of the view
+        console.log(this.coll)
         var thisView = this
         var boundRender = this._render.bind(thisView) //
         this.coll.on('sync',boundRender) //says that when the collection is synced to run the boundRender function
@@ -61,23 +57,21 @@ var MultiView = Backbone.View.extend ({
     },
 
     _goToSingle: function(evt) {
-    console.log(evt.currentTarget)
-    var itemId = evt.target.getAttribute('data-id')
+    var itemId = evt.currentTarget.getAttribute('data-id')
     window.location.hash = 'details/' + itemId
     },
 
     _render: function(){
     var itemsArray = this.coll.models
-    console.log(itemsArray)
     var htmlString =''
     for(var i = 0; i < itemsArray.length; i++) {
         var array = itemsArray[i]
-        // console.log(array.get('listing_id'))
         htmlString += '<div class = "itemContainer" data-id = "' + array.get('listing_id') + '">'
         htmlString +=       '<div class = "title">' + array.get('title') + '</div>'
-        htmlString +=       '<img src = "' + array.get('Images')[0].url_170x135 + '">'
+        htmlString +=       '<img src = "' + array.get('Images')['0'].url_170x135 + '">'
         htmlString +=       '<div class = "price">' + array.get('price') + '</div>'
         htmlString += '</div>'
+        console.log(array.get('Images')['0'].url_170x135)
     }
         this.el.innerHTML = htmlString
     }
@@ -98,10 +92,9 @@ var SingleView = Backbone.View.extend ({
         var item = this.model
         var resultsObj = item.get('results')
         var listObj = resultsObj[0]
-        console.log(listObj)
         var htmlString = ''
         htmlString += '<div class = "singleItemContainer">'
-        htmlString += '<div class "singleTitle">' + listObj.title + '</div>'
+        htmlString += '<div class = "singleTitle">' + listObj.title + '</div>'
         htmlString +=       '<img src = "' + listObj.Images[0].url_570xN + '">'
         htmlString +=       '<div class = "singleDescription">' + listObj.description + '</div>'
         htmlString +=       '<div class = "singlePrice">' + listObj.price + '</div>'
@@ -121,17 +114,18 @@ var AppRouter = Backbone.Router.extend({
         '*default': 'backToHome'
     },
 
-    doSearch: function(query) {
+    doSearch: function(keywords) {
         var searchCollection = new MultiCollection()
+        console.log(searchCollection)
         searchCollection.fetch({
             dataType: 'jsonp',
             data: {
+                keywords: keywords,
                 inludes: 'Images, Shops',
-                api_key: searchCollection._token,
-                keywords: keywords
+                api_key: searchCollection._token
             }
         })
-        new MultiView(searchCollection)
+        var searchView = new MultiView(searchCollection)
     },
 
     showSingleView: function(id) {
@@ -170,11 +164,14 @@ var AppRouter = Backbone.Router.extend({
 })
 
 var myApp = new AppRouter //creates new instance of the router
-// document.querySelector('#navBar').addEventListener('keydown',function(evt) {
-//     if (evt.keyCode === 13) {
-//         location.hash = "search/" + evt.target.value
-//     }
-// })
+
+document.querySelector('input').addEventListener('keydown',function(evt) {
+    console.log(evt.target)
+    var searchTerm = evt.target.value
+    if (evt.keyCode === 13) {
+        location.hash = 'search/' + searchTerm
+    }
+})
 
 //Big Problems
 //1. Click only works outside of image, but still in div
