@@ -96,11 +96,15 @@ var SingleView = Backbone.View.extend ({
 
     _render: function() {
         var item = this.model
-        console.log(item)
+        var resultsObj = item.get('results')
+        var listObj = resultsObj[0]
+        console.log(listObj)
         var htmlString = ''
         htmlString += '<div class = "singleItemContainer">'
-        // htmlString +=       '<img src = "' + item.get('results[0].Images')[0].url_fullxfull + '">'
-        htmlString +=       '<div class = "description">' + item.get('results')[0].description + '</div>'
+        htmlString += '<div class "singleTitle">' + listObj.title + '</div>'
+        htmlString +=       '<img src = "' + listObj.Images[0].url_570xN + '">'
+        htmlString +=       '<div class = "singleDescription">' + listObj.description + '</div>'
+        htmlString +=       '<div class = "singlePrice">' + listObj.price + '</div>'
         htmlString += '</div>'
         this.el.innerHTML = htmlString
     },
@@ -115,6 +119,19 @@ var AppRouter = Backbone.Router.extend({
         'search/:query': 'doSearch',
         'details/:id': 'showSingleView',
         '*default': 'backToHome'
+    },
+
+    doSearch: function(query) {
+        var searchCollection = new MultiCollection()
+        searchCollection.fetch({
+            dataType: 'jsonp',
+            data: {
+                inludes: 'Images, Shops',
+                api_key: searchCollection._token,
+                keywords: keywords
+            }
+        })
+        new MultiView(searchCollection)
     },
 
     showSingleView: function(id) {
@@ -153,6 +170,15 @@ var AppRouter = Backbone.Router.extend({
 })
 
 var myApp = new AppRouter //creates new instance of the router
+// document.querySelector('#navBar').addEventListener('keydown',function(evt) {
+//     if (evt.keyCode === 13) {
+//         location.hash = "search/" + evt.target.value
+//     }
+// })
+
+//Big Problems
+//1. Click only works outside of image, but still in div
+//2. I can't get the single view image to work
 
 //WORKFLOW
 //
