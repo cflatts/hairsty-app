@@ -17,6 +17,7 @@ var MultiCollection = Backbone.Collection.extend({
     _token: 'ls49cw4bk576jhmk3kyeljdf',
 
     parse: function(apiResponse) {
+
         return apiResponse.results //returns an object that has an array of objects on the results key
     }
 
@@ -45,10 +46,11 @@ var MultiView = Backbone.View.extend ({
 
 
     initialize: function(multiColl) { //the input is the same as when we created a new instance in the router
+        console.log(multiColl)
         this.coll = multiColl //sets multiColl as property of the view
-        console.log(this.coll)
         var thisView = this
         var boundRender = this._render.bind(thisView) //
+
         this.coll.on('sync',boundRender) //says that when the collection is synced to run the boundRender function
     },
 
@@ -65,13 +67,15 @@ var MultiView = Backbone.View.extend ({
     var itemsArray = this.coll.models
     var htmlString =''
     for(var i = 0; i < itemsArray.length; i++) {
+
         var array = itemsArray[i]
         htmlString += '<div class = "itemContainer" data-id = "' + array.get('listing_id') + '">'
         htmlString +=       '<div class = "title">' + array.get('title') + '</div>'
-        htmlString +=       '<img src = "' + array.get('Images')['0'].url_170x135 + '">'
+        if(array.get('Images')) {
+            htmlString +=       '<img src = "' + array.get('Images')[0].url_170x135 + '">'
+        }
         htmlString +=       '<div class = "price">' + array.get('price') + '</div>'
         htmlString += '</div>'
-        console.log(array.get('Images')['0'].url_170x135)
     }
         this.el.innerHTML = htmlString
     }
@@ -114,17 +118,19 @@ var AppRouter = Backbone.Router.extend({
         '*default': 'backToHome'
     },
 
-    doSearch: function(keywords) {
+    doSearch: function(query) {
+
         var searchCollection = new MultiCollection()
-        console.log(searchCollection)
         searchCollection.fetch({
             dataType: 'jsonp',
             data: {
-                keywords: keywords,
-                inludes: 'Images, Shops',
-                api_key: searchCollection._token
+                includes: 'Images,Shop',
+                api_key: 'ls49cw4bk576jhmk3kyeljdf',
+                keywords: query
             }
-        })
+        }).then(function(data){console.log(data)})
+
+
         var searchView = new MultiView(searchCollection)
     },
 
@@ -134,10 +140,12 @@ var AppRouter = Backbone.Router.extend({
         singleModel.fetch({
             dataType: 'jsonp',
             data: {
-                includes: 'Images, Shops',
+                includes: 'Images,Shop',
                 api_key: 'ls49cw4bk576jhmk3kyeljdf'
             }
         })
+
+
         var singleView = new SingleView(singleModel)
     },
 
@@ -149,7 +157,7 @@ var AppRouter = Backbone.Router.extend({
                 includes: 'Images,Shop', //parameters set on data
                 api_key: 'ls49cw4bk576jhmk3kyeljdf'
             }
-        })
+        }).then(function(data){console.log(data)})
         var multiView = new MultiView(multiColl) //creates new instance of the view we want, taking the collection we want to render as input
 
     },
@@ -166,7 +174,6 @@ var AppRouter = Backbone.Router.extend({
 var myApp = new AppRouter //creates new instance of the router
 
 document.querySelector('input').addEventListener('keydown',function(evt) {
-    console.log(evt.target)
     var searchTerm = evt.target.value
     if (evt.keyCode === 13) {
         location.hash = 'search/' + searchTerm
